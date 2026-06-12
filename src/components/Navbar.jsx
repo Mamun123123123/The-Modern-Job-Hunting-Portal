@@ -3,9 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@heroui/react";
+import { useSession, signOut } from "@/lib/auth-client";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const { data: session, isPending } = useSession();
 
   const navLinks = [
     {
@@ -22,9 +25,20 @@ export default function Navbar() {
     },
   ];
 
+  const handleLogout = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = "/";
+        },
+      },
+    });
+  };
+
   return (
     <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#0B0B0F]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 shadow-lg">
             <span className="text-xl font-bold text-white">P</span>
@@ -35,6 +49,7 @@ export default function Navbar() {
           </div>
         </Link>
 
+        {/* Desktop Menu */}
         <div className="flex items-center gap-4">
           <div className="hidden items-center gap-6 md:flex">
             <ul className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-2">
@@ -52,25 +67,48 @@ export default function Navbar() {
 
             <div className="h-6 w-px bg-white/20" />
 
+            {/* Auth Section */}
             <div className="flex items-center gap-4">
-              <Link
-                href="/auth/signin"
-                className="text-sm font-medium text-violet-400 transition hover:text-violet-300"
-              >
-                Sign In
-              </Link>
+              {isPending ? (
+                <span className="text-sm text-gray-400">Loading...</span>
+              ) : session?.user ? (
+                <>
+                  <span className="text-sm font-medium text-white">
+                    {session.user.name}
+                  </span>
 
-              <Link href="/auth/signup">
-                <Button
-                  radius="lg"
-                  className="h-11 bg-white px-6 text-sm font-semibold text-black hover:bg-gray-200"
-                >
-                  Get Started
-                </Button>
-              </Link>
+                  <Button
+                    color="danger"
+                    variant="flat"
+                    radius="lg"
+                    onPress={handleLogout}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/signin"
+                    className="text-sm font-medium text-violet-400 transition hover:text-violet-300"
+                  >
+                    Sign In
+                  </Link>
+
+                  <Link href="/auth/signup">
+                    <Button
+                      radius="lg"
+                      className="h-11 bg-white px-6 text-sm font-semibold text-black hover:bg-gray-200"
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
+          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex items-center justify-center rounded-lg p-2 text-white transition hover:bg-white/10 md:hidden"
@@ -111,6 +149,7 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="border-t border-white/10 bg-[#0B0B0F] md:hidden">
           <div className="space-y-3 px-4 py-6">
@@ -129,24 +168,43 @@ export default function Navbar() {
             </ul>
 
             <div className="border-t border-white/10 pt-4">
-              <div className="flex flex-col gap-3">
-                <Link
-                  href="/auth/signin"
-                  className="rounded-xl px-4 py-3 text-base font-medium text-violet-400 transition hover:bg-white/5"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
+              {session?.user ? (
+                <div className="flex flex-col gap-3">
+                  <div className="px-4 text-sm text-white">
+                    {session.user.name}
+                  </div>
 
-                <Link href="/auth/signup">
                   <Button
-                    radius="lg"
-                    className="h-11 bg-white px-6 text-sm font-semibold text-black hover:bg-gray-200"
+                    color="danger"
+                    variant="flat"
+                    onPress={handleLogout}
                   >
-                    Get Started
+                    Logout
                   </Button>
-                </Link>
-              </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href="/auth/signin"
+                    className="rounded-xl px-4 py-3 text-base font-medium text-violet-400 transition hover:bg-white/5"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+
+                  <Link
+                    href="/auth/signup"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Button
+                      radius="lg"
+                      className="w-full h-11 bg-white px-6 text-sm font-semibold text-black hover:bg-gray-200"
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
